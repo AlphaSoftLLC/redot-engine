@@ -23,6 +23,16 @@
 		# Alternative syntax (same result as above).
 		animation_tree["parameters/OneShot/request"] = AnimationNodeOneShot.ONE_SHOT_REQUEST_FADE_OUT
 
+		# Bind the callback that is called when the shot is started.".
+		animation_tree.set("parameters/OneShot/start_callback", _some_function)
+		# Alternative syntax (same result as above).
+		animation_tree["parameters/OneShot/start_callback"] = _some_function
+
+		# Bind the callback that is called when the shot is finished.".
+		animation_tree.set("parameters/OneShot/finish_callback", _some_function)
+		# Alternative syntax (same result as above).
+		animation_tree["parameters/OneShot/finish_callback"] = _some_function
+		
 		# Get current state (read-only).
 		animation_tree.get("parameters/OneShot/active")
 		# Alternative syntax (same result as above).

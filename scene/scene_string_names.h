@@ -90,6 +90,7 @@ public:
 	const StringName animation_finished = StaticCString::create("animation_finished");
 	const StringName animation_changed = StaticCString::create("animation_changed");
 	const StringName animation_started = StaticCString::create("animation_started");
+	const StringName animation_event_triggered = StaticCString::create("animation_event_triggered");
 	const StringName RESET = StaticCString::create("RESET");
 
 	const StringName pose_updated = StaticCString::create("pose_updated");

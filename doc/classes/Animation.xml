@@ -34,6 +34,14 @@
 		<link title="Animation documentation index">$DOCS_URL/tutorials/animation/index.html</link>
 	</tutorials>
 	<methods>
+		<method name="add_event">
+			<return type="void" />
+			<param index="0" name="event" type="Resource" />
+			<param index="1" name="time" type="float" />
+			<description>
+				Adds an event to this Animation. 
+			</description>
+		</method>
 		<method name="add_marker">
 			<return type="void" />
 			<param index="0" name="name" type="StringName" />
@@ -279,6 +287,20 @@
 				Returns the index of the specified track. If the track is not found, return -1.
 			</description>
 		</method>
+		<method name="get_event_color" qualifiers="const">
+			<return type="Color" />
+			<param index="0" name="event_idx" type="int" />
+			<description>
+				Returns the given event's color.
+			</description>
+		</method>
+		<method name="get_event_time" qualifiers="const">
+			<return type="float" />
+			<param index="0" name="time" type="int" />
+			<description>
+				Returns the given event's time.
+			</description>
+		</method>
 		<method name="get_marker_at_time" qualifiers="const">
 			<return type="StringName" />
 			<param index="0" name="time" type="float" />
@@ -306,11 +328,25 @@
 				Returns the given marker's time.
 			</description>
 		</method>
+		<method name="get_next_event" qualifiers="const">
+			<return type="Resource" />
+			<param index="0" name="time" type="float" />
+			<description>
+				Returns the closest event that comes after the given time. If no such event exists, a nil is returned.
+			</description>
+		</method>
 		<method name="get_next_marker" qualifiers="const">
 			<return type="StringName" />
 			<param index="0" name="time" type="float" />
 			<description>
 				Returns the closest marker that comes after the given time. If no such marker exists, an empty string is returned.
+			</description>
+		</method>
+		<method name="get_prev_event" qualifiers="const">
+			<return type="Resource" />
+			<param index="0" name="time" type="float" />
+			<description>
+				Returns the closest event that comes before the given time. If no such event exists, aa nil is returned.
 			</description>
 		</method>
 		<method name="get_prev_marker" qualifiers="const">
@@ -376,6 +412,13 @@
 				Returns the interpolated position value at the given time (in seconds). The [param track_idx] must be the index of a 3D position track.
 			</description>
 		</method>
+		<method name="remove_event">
+			<return type="void" />
+			<param index="0" name="event_idx" type="int" />
+			<description>
+				Removes the event with the given id from this Animation.
+			</description>
+		</method>
 		<method name="remove_marker">
 			<return type="void" />
 			<param index="0" name="name" type="StringName" />
@@ -424,6 +467,14 @@
 			<param index="2" name="backward" type="bool" default="false" />
 			<description>
 				Returns the interpolated scale value at the given time (in seconds). The [param track_idx] must be the index of a 3D scale track.
+			</description>
+		</method>
+		<method name="set_event_color">
+			<return type="void" />
+			<param index="0" name="event_idx" type="int" />
+			<param index="1" name="color" type="Color" />
+			<description>
+				Sets the given event's color.
 			</description>
 		</method>
 		<method name="set_marker_color">

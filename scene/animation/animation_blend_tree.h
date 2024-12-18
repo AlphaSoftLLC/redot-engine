@@ -153,6 +153,8 @@ private:
 	StringName request = PNAME("request");
 	StringName active = PNAME("active");
 	StringName internal_active = PNAME("internal_active");
+	StringName start_callback = PNAME("start_callback");
+	StringName finish_callback = PNAME("finish_callback");
 	StringName fade_in_remaining = "fade_in_remaining";
 	StringName fade_out_remaining = "fade_out_remaining";
 	StringName time_to_restart = "time_to_restart";

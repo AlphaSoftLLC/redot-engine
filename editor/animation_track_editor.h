@@ -656,6 +656,11 @@ class AnimationTrackEditor : public VBoxContainer {
 	PropertySelector *prop_selector = nullptr;
 	PropertySelector *method_selector = nullptr;
 	SceneTreeDialog *pick_track = nullptr;
+
+	ConfirmationDialog *event_track_insert_name_dialog = nullptr;
+	LineEdit *event_track_insert_new_name = nullptr;
+	AcceptDialog *event_track_insert_error_dialog = nullptr;
+
 	int adding_track_type = 0;
 	NodePath adding_track_path;
 
@@ -857,6 +862,9 @@ class AnimationTrackEditor : public VBoxContainer {
 
 	void _pick_track_filter_text_changed(const String &p_newtext);
 	void _pick_track_select_recursive(TreeItem *p_item, const String &p_filter, Vector<Node *> &p_select_candidates);
+
+	void _event_track_insert_confirmed();
+	void _event_track_new_name_changed(const String &p_text);
 
 	double snap_unit;
 	bool fps_compatible = true;

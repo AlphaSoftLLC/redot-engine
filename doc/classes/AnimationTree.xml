@@ -45,6 +45,16 @@
 				Emitted when the [member anim_player] is changed.
 			</description>
 		</signal>
+		<signal name="animation_shot_finished">
+			<param index="0" name="node_path" type="StringName" />
+			<description>
+			</description>
+		</signal>
+		<signal name="animation_shot_started">
+			<param index="0" name="node_path" type="StringName" />
+			<description>
+			</description>
+		</signal>
 	</signals>
 	<constants>
 		<constant name="ANIMATION_PROCESS_PHYSICS" value="0" enum="AnimationProcessCallback" deprecated="See [constant AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS].">

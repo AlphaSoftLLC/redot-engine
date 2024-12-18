@@ -61,7 +61,9 @@
 #include "scene/gui/texture_rect.h"
 #include "scene/gui/view_panner.h"
 #include "scene/main/window.h"
+#include "scene/resources/animation_event.h"
 #include "servers/audio/audio_stream.h"
+#include "thirdparty/harfbuzz/src/hb-ot-cff-common.hh"
 
 constexpr double FPS_DECIMAL = 1.0;
 constexpr double SECOND_DECIMAL = 0.0001;
@@ -428,6 +430,55 @@ bool AnimationTrackKeyEdit::_set(const StringName &p_name, const Variant &p_valu
 				return true;
 			}
 		} break;
+		case Animation::TYPE_EVENT: {
+			if (name == "event") {
+				Ref<AnimationEvent> event = p_value;
+
+				setting = true;
+				undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+				Ref<Resource> prev = animation->event_track_get_key_event(track, key);
+				undo_redo->add_do_method(animation.ptr(), "event_track_set_key_event", track, key, event);
+				undo_redo->add_undo_method(animation.ptr(), "event_track_set_key_event", track, key, prev);
+				undo_redo->add_do_method(this, "_update_obj", animation);
+				undo_redo->add_undo_method(this, "_update_obj", animation);
+				undo_redo->commit_action();
+
+				setting = false;
+				return true;
+			}
+
+			if (name == "probability") {
+				float value = p_value;
+
+				setting = true;
+				undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+				float prev = animation->event_track_get_key_probability(track, key);
+				undo_redo->add_do_method(animation.ptr(), "event_track_set_key_probability", track, key, value);
+				undo_redo->add_undo_method(animation.ptr(), "event_track_set_key_probability", track, key, prev);
+				undo_redo->add_do_method(this, "_update_obj", animation);
+				undo_redo->add_undo_method(this, "_update_obj", animation);
+				undo_redo->commit_action();
+
+				setting = false;
+				return true;
+			}
+
+			if (name == "weight_threshold") {
+				float value = p_value;
+
+				setting = true;
+				undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+				float prev = animation->event_track_get_key_weight_threshold(track, key);
+				undo_redo->add_do_method(animation.ptr(), "event_track_set_key_blend_threshold", track, key, value);
+				undo_redo->add_undo_method(animation.ptr(), "event_track_set_key_blend_threshold", track, key, prev);
+				undo_redo->add_do_method(this, "_update_obj", animation);
+				undo_redo->add_undo_method(this, "_update_obj", animation);
+				undo_redo->commit_action();
+
+				setting = false;
+				return true;
+			}
+		} break;
 	}
 
 	return false;
@@ -540,6 +591,22 @@ bool AnimationTrackKeyEdit::_get(const StringName &p_name, Variant &r_ret) const
 				return true;
 			}
 
+		} break;
+		case Animation::TYPE_EVENT: {
+			if (name == "event") {
+				r_ret = animation->event_track_get_key_event(track, key);
+				return true;
+			}
+
+			if (name == "probability") {
+				r_ret = animation->event_track_get_key_probability(track, key);
+				return true;
+			}
+
+			if (name == "weight_threshold") {
+				r_ret = animation->event_track_get_key_weight_threshold(track, key);
+				return true;
+			}
 		} break;
 	}
 
@@ -664,6 +731,11 @@ void AnimationTrackKeyEdit::_get_property_list(List<PropertyInfo> *p_list) const
 			p_list->push_back(PropertyInfo(Variant::STRING_NAME, PNAME("animation"), PROPERTY_HINT_ENUM, animations));
 
 		} break;
+		case Animation::TYPE_EVENT: {
+			p_list->push_back(PropertyInfo(Variant::OBJECT, PNAME("event"), PROPERTY_HINT_RESOURCE_TYPE, "AnimationEvent"));
+			p_list->push_back(PropertyInfo(Variant::FLOAT, PNAME("probability"), PROPERTY_HINT_RANGE, "0,1,0.01"));
+			p_list->push_back(PropertyInfo(Variant::FLOAT, PNAME("weight_threshold"), PROPERTY_HINT_RANGE, "0,1,0.01"));
+		}
 	}
 
 	if (animation->track_get_type(track) == Animation::TYPE_VALUE) {
@@ -982,6 +1054,42 @@ bool AnimationMultiTrackKeyEdit::_set(const StringName &p_name, const Variant &p
 						update_obj = true;
 					}
 				} break;
+				case Animation::TYPE_EVENT: {
+					if (name == "event") {
+						Ref<AnimationEvent> event = p_value;
+
+						if (!setting) {
+							setting = true;
+							undo_redo->create_action(TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+						}
+						Ref<Resource> prev = animation->event_track_get_key_event(track, key);
+						undo_redo->add_do_method(animation.ptr(), "event_track_set_key_event", track, key, event);
+						undo_redo->add_undo_method(animation.ptr(), "event_track_set_key_event", track, key, prev);
+						update_obj = true;
+					} else if (name == "probability") {
+						float value = p_value;
+
+						if (!setting) {
+							setting = true;
+							undo_redo->create_action(TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+						}
+						float prev = animation->event_track_get_key_probability(track, key);
+						undo_redo->add_do_method(animation.ptr(), "event_track_set_key_probability", track, key, value);
+						undo_redo->add_undo_method(animation.ptr(), "event_track_set_key_probability", track, key, prev);
+						update_obj = true;
+					} else if (name == "weight_threshold") {
+						float value = p_value;
+
+						if (!setting) {
+							setting = true;
+							undo_redo->create_action(TTR("Animation Multi Change Keyframe Value"), UndoRedo::MERGE_ENDS);
+						}
+						float prev = animation->event_track_get_key_weight_threshold(track, key);
+						undo_redo->add_do_method(animation.ptr(), "event_track_set_key_blend_threshold", track, key, value);
+						undo_redo->add_undo_method(animation.ptr(), "event_track_set_key_blend_threshold", track, key, prev);
+						update_obj = true;
+					}
+				}
 			}
 		}
 	}
@@ -1114,6 +1222,23 @@ bool AnimationMultiTrackKeyEdit::_get(const StringName &p_name, Variant &r_ret) 
 				case Animation::TYPE_ANIMATION: {
 					if (name == "animation") {
 						r_ret = animation->animation_track_get_key_animation(track, key);
+						return true;
+					}
+
+				} break;
+				case Animation::TYPE_EVENT: {
+					if (name == "event") {
+						r_ret = animation->event_track_get_key_event(track, key);
+						return true;
+					}
+
+					if (name == "probability") {
+						r_ret = animation->event_track_get_key_probability(track, key);
+						return true;
+					}
+
+					if (name == "weight_threshold") {
+						r_ret = animation->event_track_get_key_weight_threshold(track, key);
 						return true;
 					}
 
@@ -1269,6 +1394,11 @@ void AnimationMultiTrackKeyEdit::_get_property_list(List<PropertyInfo> *p_list) 
 
 				p_list->push_back(PropertyInfo(Variant::STRING_NAME, "animation", PROPERTY_HINT_ENUM, animations));
 			} break;
+			case Animation::TYPE_EVENT: {
+				p_list->push_back(PropertyInfo(Variant::OBJECT, "event", PROPERTY_HINT_RESOURCE_TYPE, "AnimationEvent"));
+				p_list->push_back(PropertyInfo(Variant::FLOAT, "probability", PROPERTY_HINT_RANGE, "0,1,0.01"));
+				p_list->push_back(PropertyInfo(Variant::FLOAT, "weight_threshold", PROPERTY_HINT_RANGE, "0,1,0.01"));
+			}
 		}
 	}
 }
@@ -1469,6 +1599,7 @@ void AnimationTimelineEdit::_notification(int p_what) {
 			add_track->get_popup()->add_icon_item(get_editor_theme_icon(SNAME("KeyBezier")), TTR("Bezier Curve Track..."));
 			add_track->get_popup()->add_icon_item(get_editor_theme_icon(SNAME("KeyAudio")), TTR("Audio Playback Track..."));
 			add_track->get_popup()->add_icon_item(get_editor_theme_icon(SNAME("KeyAnimation")), TTR("Animation Playback Track..."));
+			add_track->get_popup()->add_icon_item(get_editor_theme_icon(SNAME("KeyEvent")), TTR("Event Track..."));
 		} break;
 
 		case EditorSettings::NOTIFICATION_EDITOR_SETTINGS_CHANGED: {
@@ -2544,6 +2675,25 @@ void AnimationTrackEdit::draw_key(int p_index, float p_pixels_sec, int p_x, bool
 		}
 	}
 
+	if (animation->track_get_type(track) == Animation::TYPE_EVENT) {
+		const Ref<Font> font = get_theme_font(SceneStringName(font), SNAME("Label"));
+        const int font_size = get_theme_font_size(SceneStringName(font_size), SNAME("Label"));
+        Color color = get_theme_color(SceneStringName(font_color), SNAME("Label"));
+        color.a = 0.5;
+
+		Dictionary d = animation->track_get_key_value(track, p_index);
+		String text;
+
+		if (d.has("event")) {
+			text = String(d["event"]);
+		}
+
+		int limit = MAX(0, p_clip_right - p_x - icon_to_draw->get_width());
+		if (limit > 0) {
+			draw_string(font, Vector2(p_x + icon_to_draw->get_width(), int(get_size().height - font->get_height(font_size)) / 2 + font->get_ascent(font_size)), text, HORIZONTAL_ALIGNMENT_LEFT, limit, font_size, color);
+		}
+	}
+
 	// Use a different color for the currently hovered key.
 	// The color multiplier is chosen to work with both dark and light editor themes,
 	// and on both unselected and selected key icons.
@@ -2727,7 +2877,7 @@ bool AnimationTrackEdit::_is_value_key_valid(const Variant &p_key_value, Variant
 }
 
 Ref<Texture2D> AnimationTrackEdit::_get_key_type_icon() const {
-	const Ref<Texture2D> type_icons[9] = {
+	const Ref<Texture2D> type_icons[10] = {
 		get_editor_theme_icon(SNAME("KeyValue")),
 		get_editor_theme_icon(SNAME("KeyTrackPosition")),
 		get_editor_theme_icon(SNAME("KeyTrackRotation")),
@@ -2736,7 +2886,8 @@ Ref<Texture2D> AnimationTrackEdit::_get_key_type_icon() const {
 		get_editor_theme_icon(SNAME("KeyCall")),
 		get_editor_theme_icon(SNAME("KeyBezier")),
 		get_editor_theme_icon(SNAME("KeyAudio")),
-		get_editor_theme_icon(SNAME("KeyAnimation"))
+		get_editor_theme_icon(SNAME("KeyAnimation")),
+		get_editor_theme_icon(SNAME("KeyEvent"))
 	};
 	return type_icons[animation->track_get_type(track)];
 }
@@ -2895,6 +3046,23 @@ String AnimationTrackEdit::get_tooltip(const Point2 &p_pos) const {
 				case Animation::TYPE_ANIMATION: {
 					String name = animation->animation_track_get_key_animation(track, key_idx);
 					text += TTR("Animation Clip:") + " " + name + "\n";
+				} break;
+				case Animation::TYPE_EVENT: {
+					Dictionary d = animation->track_get_key_value(track, key_idx);
+					Ref<Resource> event = animation->event_track_get_key_event(track, key_idx);
+					if (event.is_valid()) {
+						if (!event->get_name().is_empty()) {
+							text += TTR("Event:") + " " + event->get_name() + "\n";
+						}
+						else {
+							text += TTR("Event:") + " " + event->to_string() + "\n";
+						}
+						float probability = animation->event_track_get_key_probability(track, key_idx);
+						text += TTR("Probability:") + " " + rtos(probability) + "\n";
+						float weight_threshold = animation->event_track_get_key_weight_threshold(track, key_idx);
+						text += TTR("Weight Threshold:") + " " + rtos(weight_threshold) + "\n";
+					}
+					text += "\n";
 				} break;
 			}
 			return text;
@@ -4690,7 +4858,8 @@ AnimationTrackEditor::TrackIndices AnimationTrackEditor::_confirm_insert(InsertD
 		case Animation::TYPE_BLEND_SHAPE:
 		case Animation::TYPE_VALUE:
 		case Animation::TYPE_AUDIO:
-		case Animation::TYPE_ANIMATION: {
+		case Animation::TYPE_ANIMATION:
+		case Animation::TYPE_EVENT: {
 			value = p_id.value;
 
 		} break;
@@ -4939,7 +5108,11 @@ void AnimationTrackEditor::_update_tracks() {
 				Ref<Texture2D> icon = get_editor_theme_icon(SNAME("Node"));
 				String name = base_path;
 				String tooltip;
-				if (root) {
+				if (animation->track_get_type(i) == Animation::TYPE_EVENT) {
+					icon = get_editor_theme_icon(SNAME("Event"));
+					name = TTR("Events");
+				}
+				else if (root) {
 					Node *n = root->get_node_or_null(base_path);
 					if (n) {
 						icon = EditorNode::get_singleton()->get_object_icon(n, "Node");
@@ -5326,11 +5499,18 @@ void AnimationTrackEditor::_add_track(int p_type) {
 	if (!ap) {
 		ERR_FAIL_EDMSG("No AnimationPlayer is currently being edited.");
 	}
+
+	if (p_type == Animation::TYPE_EVENT) {
+		event_track_insert_name_dialog->popup_centered_clamped(Size2(200, 100) * EDSCALE);
+		return;
+	}
+
 	Node *root_node = ap->get_node_or_null(ap->get_root_node());
 	if (!root_node) {
 		EditorNode::get_singleton()->show_warning(TTR("Not possible to add a new track without a root"));
 		return;
 	}
+
 	adding_track_type = p_type;
 	Vector<StringName> valid_types;
 	switch (adding_track_type) {
@@ -5504,10 +5684,14 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 		p_ofs += SECOND_DECIMAL;
 	}
 
-	Node *node = root->get_node_or_null(animation->track_get_path(p_track));
-	if (!node) {
-		EditorNode::get_singleton()->show_warning(TTR("Track path is invalid, so can't add a key."));
-		return;
+	Node *node = nullptr;
+
+	if (animation->track_get_type(p_track) != Animation::TYPE_EVENT) {
+		node = root->get_node_or_null(animation->track_get_path(p_track));
+		if (!node) {
+			EditorNode::get_singleton()->show_warning(TTR("Track path is invalid, so can't add a key."));
+			return;
+		}
 	}
 
 	// Special handling for this one.
@@ -5525,7 +5709,9 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 	id.track_idx = p_track;
 	id.type = animation->track_get_type(p_track);
 	// TRANSLATORS: This describes the target of new animation track, will be inserted into another string.
-	id.query = vformat(TTR("node '%s'"), node->get_name());
+	if (animation->track_get_type(p_track) != Animation::TYPE_EVENT) {
+		id.query = vformat(TTR("node '%s'"), node->get_name());
+	}
 	id.time = p_ofs;
 	// id.value is filled in each case handled below.
 
@@ -5600,6 +5786,13 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 		} break;
 		case Animation::TYPE_ANIMATION: {
 			id.value = StringName("[stop]");
+		} break;
+		case Animation::TYPE_EVENT: {
+			Dictionary ek;
+			ek["event"] = Ref<Resource>();
+			ek["probability"] = 1.0;
+			ek["weight_threshold"] = 0.0;
+			id.value = ek;
 		} break;
 		default: {
 			// All track types should be handled by now.
@@ -7521,6 +7714,35 @@ void AnimationTrackEditor::_pick_track_select_recursive(TreeItem *p_item, const 
 	}
 }
 
+void AnimationTrackEditor::_event_track_insert_confirmed() {
+	StringName name = event_track_insert_new_name->get_text();
+
+	for (int i = 0; i < animation->get_track_count(); i++) {
+		if(animation->track_get_type(i) != Animation::TYPE_EVENT) {
+			continue;
+		}
+		if (animation->track_get_path(i) == adding_track_path) {
+			event_track_insert_error_dialog->set_text(vformat(TTR("Event track with name '%s' already exists!"), name));
+			event_track_insert_error_dialog->popup_centered();
+			return;
+		}
+	}
+
+	EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+	undo_redo->create_action(TTR("Add Track"));
+	undo_redo->add_do_method(animation.ptr(), "add_track", Animation::TYPE_EVENT);
+	undo_redo->add_do_method(animation.ptr(), "track_set_path", animation->get_track_count(), NodePath("Events:" + name));
+	undo_redo->add_undo_method(animation.ptr(), "remove_track", animation->get_track_count());
+	undo_redo->commit_action();
+
+	event_track_insert_name_dialog->hide();
+	adding_track_path = NodePath();
+}
+
+void AnimationTrackEditor::_event_track_new_name_changed(const String &p_text) {
+	event_track_insert_name_dialog->get_ok_button()->set_disabled(p_text.is_empty());
+}
+
 AnimationTrackEditor::AnimationTrackEditor() {
 	main_panel = memnew(PanelContainer);
 	main_panel->set_focus_mode(FOCUS_ALL); // Allow panel to have focus so that shortcuts work as expected.
@@ -7787,6 +8009,33 @@ AnimationTrackEditor::AnimationTrackEditor() {
 	method_selector = memnew(PropertySelector);
 	add_child(method_selector);
 	method_selector->connect("selected", callable_mp(this, &AnimationTrackEditor::_add_method_key));
+
+	event_track_insert_name_dialog = memnew(ConfirmationDialog);
+	event_track_insert_name_dialog->set_title(TTR("Insert Event Track"));
+	event_track_insert_name_dialog->set_hide_on_ok(false);
+	event_track_insert_name_dialog->connect(SceneStringName(confirmed), callable_mp(this, &AnimationTrackEditor::_event_track_insert_confirmed));
+	add_child(event_track_insert_name_dialog);
+	VBoxContainer* event_insert_vbox = memnew(VBoxContainer);
+	event_insert_vbox->set_anchors_and_offsets_preset(Control::LayoutPreset::PRESET_FULL_RECT);
+	event_track_insert_name_dialog->add_child(event_insert_vbox);
+	event_track_insert_new_name = memnew(LineEdit);
+	event_track_insert_new_name->connect(SceneStringName(text_changed), callable_mp(this, &AnimationTrackEditor::_event_track_new_name_changed));
+	event_track_insert_name_dialog->register_text_enter(event_track_insert_new_name);
+	HBoxContainer *hbox = memnew(HBoxContainer);
+	Label *label = memnew(Label);
+	label->set_text(TTR("Track Name"));
+	hbox->add_child(label);
+	hbox->add_child(event_track_insert_new_name);
+	hbox->set_h_size_flags(SIZE_EXPAND_FILL);
+	label->set_h_size_flags(SIZE_EXPAND_FILL);
+	label->set_stretch_ratio(1.0);
+	event_track_insert_new_name->set_h_size_flags(SIZE_EXPAND_FILL);
+	event_track_insert_new_name->set_stretch_ratio(1.0);
+	event_insert_vbox->add_child(hbox);
+	event_track_insert_error_dialog = memnew(AcceptDialog);
+	event_track_insert_error_dialog->set_ok_button_text(TTR("Close"));
+	event_track_insert_error_dialog->set_title(TTR("Error!"));
+	event_track_insert_name_dialog->add_child(event_track_insert_error_dialog);
 
 	insert_confirm = memnew(ConfirmationDialog);
 	add_child(insert_confirm);
