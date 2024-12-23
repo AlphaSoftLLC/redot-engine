@@ -23,7 +23,7 @@
 			<return type="void" />
 			<description>
 				Shuts down the system MIDI driver. Redot will no longer receive [InputEventMIDI]. See also [method open_midi_inputs] and [method get_connected_midi_inputs].
-				[b]Note:[/b] This method is implemented on Linux, macOS, and Windows.
+				[b]Note:[/b] This method is implemented on Linux, macOS, Windows, and Web.
 			</description>
 		</method>
 		<method name="crash">
@@ -244,7 +244,9 @@
 			<return type="PackedStringArray" />
 			<description>
 				Returns an array of connected MIDI device names, if they exist. Returns an empty array if the system MIDI driver has not previously been initialized with [method open_midi_inputs]. See also [method close_midi_inputs].
-				[b]Note:[/b] This method is implemented on Linux, macOS, and Windows.
+				[b]Note:[/b] This method is implemented on Linux, macOS, Windows, and Web.
+				[b]Note:[/b] On the Web platform, Web MIDI needs to be supported by the browser. [url=https://caniuse.com/midi]For the time being[/url], it is currently supported by all major browsers, except Safari.
+				[b]Note:[/b] On the Web platform, using MIDI input requires a browser permission to be granted first. This permission request is performed when calling [method open_midi_inputs]. The browser will refrain from processing MIDI input until the user accepts the permission request.
 			</description>
 		</method>
 		<method name="get_data_dir" qualifiers="const">
@@ -562,9 +564,9 @@
 			<return type="String" />
 			<description>
 				Returns the absolute directory path where user data is written (the [code]user://[/code] directory in Redot). The path depends on the project name and [member ProjectSettings.application/config/use_custom_user_dir].
-				- On Windows, this is [code]%AppData%\Godot\app_userdata\[project_name][/code], or [code]%AppData%\[custom_name][/code] if [code]use_custom_user_dir[/code] is set. [code]%AppData%[/code] expands to [code]%UserProfile%\AppData\Roaming[/code].
-				- On macOS, this is [code]~/Library/Application Support/Godot/app_userdata/[project_name][/code], or [code]~/Library/Application Support/[custom_name][/code] if [code]use_custom_user_dir[/code] is set.
-				- On Linux and BSD, this is [code]~/.local/share/godot/app_userdata/[project_name][/code], or [code]~/.local/share/[custom_name][/code] if [code]use_custom_user_dir[/code] is set.
+				- On Windows, this is [code]%AppData%\Redot\app_userdata\[project_name][/code], or [code]%AppData%\[custom_name][/code] if [code]use_custom_user_dir[/code] is set. [code]%AppData%[/code] expands to [code]%UserProfile%\AppData\Roaming[/code].
+				- On macOS, this is [code]~/Library/Application Support/Redot/app_userdata/[project_name][/code], or [code]~/Library/Application Support/[custom_name][/code] if [code]use_custom_user_dir[/code] is set.
+				- On Linux and BSD, this is [code]~/.local/share/redot/app_userdata/[project_name][/code], or [code]~/.local/share/[custom_name][/code] if [code]use_custom_user_dir[/code] is set.
 				- On Android and iOS, this is a sandboxed directory in either internal or external storage, depending on the user's configuration.
 				- On Web, this is a virtual directory managed by the browser.
 				If the project name is empty, [code][project_name][/code] falls back to [code][unnamed project][/code].
@@ -580,6 +582,13 @@
 				- For macOS and iOS, the major and minor version are returned, as well as the patch number.
 				- For Android, the SDK version and the incremental build number are returned. If it's a custom ROM, it attempts to return its version instead.
 				[b]Note:[/b] This method is not supported on the Web platform. It returns an empty string.
+			</description>
+		</method>
+		<method name="get_version_alias" qualifiers="const">
+			<return type="String" />
+			<description>
+				Returns the branded version used in marketing, followed by the build number (on Windows) or the version number (on macOS). Examples include [code]11 (build 22000)[/code] and [code]Sequoia (15.0.0)[/code]. This value can then be appended to [method get_name] to get a full, human-readable operating system name and version combination for the operating system. Windows feature updates such as 24H2 are not contained in the resulting string, but Windows Server is recognized as such (e.g. [code]2025 (build 26100)[/code] for Windows Server 2025).
+				[b]Note:[/b] This method is only supported on Windows and macOS. On other operating systems, it returns the same value as [method get_version].
 			</description>
 		</method>
 		<method name="get_video_adapter_driver_info" qualifiers="const">
@@ -704,7 +713,9 @@
 			<return type="void" />
 			<description>
 				Initializes the singleton for the system MIDI driver, allowing Redot to receive [InputEventMIDI]. See also [method get_connected_midi_inputs] and [method close_midi_inputs].
-				[b]Note:[/b] This method is implemented on Linux, macOS, and Windows.
+				[b]Note:[/b] This method is implemented on Linux, macOS, Windows, and Web.
+				[b]Note:[/b] On the Web platform, Web MIDI needs to be supported by the browser. [url=https://caniuse.com/midi]For the time being[/url], it is currently supported by all major browsers, except Safari.
+				[b]Note:[/b] On the Web platform, using MIDI input requires a browser permission to be granted first. This permission request is performed when calling [method open_midi_inputs]. The browser will refrain from processing MIDI input until the user accepts the permission request.
 			</description>
 		</method>
 		<method name="read_buffer_from_stdin">
@@ -876,13 +887,13 @@
 			Standard I/O device is invalid. No data can be received from or sent to these standard I/O devices.
 		</constant>
 		<constant name="STD_HANDLE_CONSOLE" value="1" enum="StdHandleType">
-			Standard I/O device is a console. This typically occurs when Godot is run from a terminal with no redirection. This is also used for all standard I/O devices when running Godot from the editor, at least on desktop platforms.
+			Standard I/O device is a console. This typically occurs when Redot is run from a terminal with no redirection. This is also used for all standard I/O devices when running Redot from the editor, at least on desktop platforms.
 		</constant>
 		<constant name="STD_HANDLE_FILE" value="2" enum="StdHandleType">
-			Standard I/O device is a regular file. This typically occurs with redirection from a terminal, e.g. [code]godot &gt; stdout.txt[/code], [code]godot &lt; stdin.txt[/code] or [code]godot &gt; stdout_stderr.txt 2&gt;&amp;1[/code].
+			Standard I/O device is a regular file. This typically occurs with redirection from a terminal, e.g. [code]redot &gt; stdout.txt[/code], [code]redot &lt; stdin.txt[/code] or [code]redot &gt; stdout_stderr.txt 2&gt;&amp;1[/code].
 		</constant>
 		<constant name="STD_HANDLE_PIPE" value="3" enum="StdHandleType">
-			Standard I/O device is a FIFO/pipe. This typically occurs with pipe usage from a terminal, e.g. [code]echo "Hello" | godot[/code].
+			Standard I/O device is a FIFO/pipe. This typically occurs with pipe usage from a terminal, e.g. [code]echo "Hello" | redot[/code].
 		</constant>
 		<constant name="STD_HANDLE_UNKNOWN" value="4" enum="StdHandleType">
 			Standard I/O device type is unknown.
