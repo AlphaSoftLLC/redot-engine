@@ -34,9 +34,6 @@
 #include "animation.compat.inc"
 
 #include "core/io/marshalls.h"
-#include "core/math/geometry_3d.h"
-#include "drivers/gles3/shader_gles3.h"
-#include "thirdparty/icu4c/common/ulist.h"
 
 bool Animation::_set(const StringName &p_name, const Variant &p_value) {
 	String prop_name = p_name;
