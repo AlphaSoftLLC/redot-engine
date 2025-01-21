@@ -57,6 +57,7 @@ public:
 		TYPE_BEZIER, // Bezier curve.
 		TYPE_AUDIO,
 		TYPE_ANIMATION,
+		TYPE_EVENT
 	};
 
 	enum InterpolationType : uint8_t {
@@ -238,6 +239,25 @@ private:
 			type = TYPE_ANIMATION;
 		}
 	};
+
+	/* EVENT TRACK */
+
+    struct EventKey {
+        Ref<Resource> event;
+        real_t probability = 1;
+        real_t weight_threshold = 0;
+
+        EventKey() {
+        }
+    };
+
+    struct EventTrack : public Track {
+        Vector<TKey<EventKey>> values;
+
+        EventTrack() {
+        	type = TYPE_EVENT;
+        }
+    };
 
 	/* Marker */
 
@@ -501,6 +521,14 @@ public:
 	int animation_track_insert_key(int p_track, double p_time, const StringName &p_animation);
 	void animation_track_set_key_animation(int p_track, int p_key, const StringName &p_animation);
 	StringName animation_track_get_key_animation(int p_track, int p_key) const;
+
+	int event_track_insert_key(int p_track, double p_time, const Ref<Resource> &p_event, real_t p_probability = 1, real_t p_weight_threshold = 0);
+    void event_track_set_key_event(int p_track, int p_key, const Ref<Resource> &p_event);
+    void event_track_set_key_probability(int p_track, int p_key, const real_t p_probability);
+    void event_track_set_key_weight_threshold(int p_track, int p_key, const real_t p_weight_threshold);
+    Ref<Resource> event_track_get_key_event(int p_track, int p_key) const;
+    real_t event_track_get_key_probability(int p_track, int p_key) const;
+    real_t event_track_get_key_weight_threshold(int p_track, int p_key) const;
 
 	void track_set_interpolation_loop_wrap(int p_track, bool p_enable);
 	bool track_get_interpolation_loop_wrap(int p_track) const;

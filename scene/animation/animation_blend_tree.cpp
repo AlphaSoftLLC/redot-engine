@@ -427,6 +427,8 @@ void AnimationNodeOneShot::get_parameter_list(List<PropertyInfo> *r_list) const 
 	r_list->push_back(PropertyInfo(Variant::FLOAT, fade_in_remaining, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE));
 	r_list->push_back(PropertyInfo(Variant::FLOAT, fade_out_remaining, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE));
 	r_list->push_back(PropertyInfo(Variant::FLOAT, time_to_restart, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_NONE));
+	r_list->push_back(PropertyInfo(Variant::CALLABLE, start_callback, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE));
+	r_list->push_back(PropertyInfo(Variant::CALLABLE, finish_callback, PROPERTY_HINT_NONE, "", PROPERTY_USAGE_STORAGE));
 }
 
 Variant AnimationNodeOneShot::get_parameter_default_value(const StringName &p_parameter) const {
@@ -621,6 +623,10 @@ AnimationNode::NodeTimeInfo AnimationNodeOneShot::_process(const AnimationMixer:
 		set_parameter(request, ONE_SHOT_REQUEST_NONE);
 		set_parameter(internal_active, true);
 		set_parameter(active, true);
+		const Callable& callback = get_parameter(start_callback);
+		if (!callback.is_null()) {
+			callback.call_deferred();
+		}
 	}
 
 	real_t blend = 1.0;
@@ -677,6 +683,10 @@ AnimationNode::NodeTimeInfo AnimationNodeOneShot::_process(const AnimationMixer:
 		cur_fade_out_remaining = os_nti.get_remain(break_loop_at_end);
 		cur_fade_in_remaining = 0;
 		set_parameter(internal_active, false);
+		const Callable& callback = get_parameter(finish_callback);
+		if (!callback.is_null()) {
+			callback.call_deferred();
+		}
 	}
 
 	if (!p_seek) {

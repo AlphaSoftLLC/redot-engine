@@ -33,6 +33,7 @@
 #ifndef ANIMATION_MIXER_H
 #define ANIMATION_MIXER_H
 
+#include "core/math/random_number_generator.h"
 #include "core/templates/a_hash_map.h"
 #include "scene/animation/tween.h"
 #include "scene/main/node.h"
@@ -309,6 +310,16 @@ protected:
 			type = Animation::TYPE_ANIMATION;
 		}
 		~TrackCacheAnimation() {}
+	};
+
+	struct TrackCacheEvent : public TrackCache {
+		Ref<RandomNumberGenerator> random;
+
+		TrackCacheEvent() {
+			type = Animation::TYPE_EVENT;
+			random.instantiate();
+		}
+		~TrackCacheEvent() {}
 	};
 
 	RootMotionCache root_motion_cache;

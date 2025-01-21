@@ -40,6 +40,7 @@
 #include "scene/animation/animation_player.h"
 #include "scene/audio/audio_stream_player.h"
 #include "scene/resources/animation.h"
+#include "scene/resources/animation_event.h"
 #include "servers/audio/audio_stream.h"
 #include "servers/audio_server.h"
 
@@ -692,12 +693,16 @@ bool AnimationMixer::_update_caches() {
 				Ref<Resource> resource;
 				Vector<StringName> leftover_path;
 
-				Node *child = parent->get_node_and_resource(path, resource, leftover_path);
-				if (!child) {
-					if (check_path) {
-						WARN_PRINT_ED(mixer_name + ": '" + String(E) + "', couldn't resolve track:  '" + String(path) + "'. This warning can be disabled in Project Settings.");
+				Node *child = nullptr;
+
+				if (track_src_type != Animation::TYPE_EVENT) {
+					child = parent->get_node_and_resource(path, resource, leftover_path);
+					if (!child) {
+						if (check_path) {
+							WARN_PRINT_ED(mixer_name + ": '" + String(E) + "', couldn't resolve track:  '" + String(path) + "'. This warning can be disabled in Project Settings.");
+						}
+						continue;
 					}
-					continue;
 				}
 
 				switch (track_src_type) {
@@ -892,6 +897,10 @@ bool AnimationMixer::_update_caches() {
 
 						track = track_animation;
 
+					} break;
+					case Animation::TYPE_EVENT: {
+						TrackCacheEvent *track_event = memnew(TrackCacheEvent);
+						track = track_event;
 					} break;
 					default: {
 						ERR_PRINT("Animation corrupted (invalid track type).");
@@ -1844,6 +1853,69 @@ void AnimationMixer::_blend_process(double p_delta, bool p_update_only) {
 						}
 					}
 				} break;
+				case Animation::TYPE_EVENT: {
+#ifdef TOOLS_ENABLED
+					if (!can_call) {
+						continue;
+					}
+#endif // TOOLS_ENABLED
+					if (p_update_only || Math::is_zero_approx(blend)) {
+						continue;
+					}
+					TrackCacheEvent *t = static_cast<TrackCacheEvent *>(track);
+					if (seeked) {
+						int idx = a->track_find_key(i, time, is_external_seeking ? Animation::FIND_MODE_NEAREST : Animation::FIND_MODE_EXACT, true);
+						if (idx < 0) {
+							continue;
+						}
+
+						const float weight_threshold = a->event_track_get_key_weight_threshold(i, idx);
+						if (weight < weight_threshold) {
+							continue;
+						}
+
+						const float probability = a->event_track_get_key_probability(i, idx);
+						if (probability < 1.0f) {
+							t->random->randomize();
+
+							if (t->random->randf() > probability) {
+								continue;
+							}
+						}
+
+						const Ref<AnimationEvent>& evt = a->event_track_get_key_event(i, idx);
+
+						if (callback_mode_method == ANIMATION_CALLBACK_MODE_METHOD_DEFERRED) {
+							call_deferred("emit_signal", SceneStringName(animation_event_triggered), evt);
+						}
+						else {
+							emit_signal(SceneStringName(animation_event_triggered), evt);
+						}
+					} else {
+						List<int> indices;
+						a->track_get_key_indices_in_range(i, time, delta, &indices, looped_flag);
+						for (int &F : indices) {
+							const float weight_threshold = a->event_track_get_key_weight_threshold(i, F);
+							if (weight < weight_threshold) {
+								continue;
+							}
+
+							const float probability = a->event_track_get_key_probability(i, F);
+							if (probability < 1.0f) {
+								t->random->randomize();
+							}
+
+							const Ref<AnimationEvent>& evt = a->event_track_get_key_event(i, F);
+
+							if (callback_mode_method == ANIMATION_CALLBACK_MODE_METHOD_DEFERRED) {
+								call_deferred("emit_signal", SceneStringName(animation_event_triggered), evt);
+							}
+							else {
+								emit_signal(SceneStringName(animation_event_triggered), evt);
+							}
+						}
+					}
+				} break;
 			}
 		}
 	}
@@ -2483,6 +2555,7 @@ void AnimationMixer::_bind_methods() {
 	ADD_SIGNAL(MethodInfo(SNAME("animation_libraries_updated")));
 	ADD_SIGNAL(MethodInfo(SNAME("animation_finished"), PropertyInfo(Variant::STRING_NAME, "anim_name")));
 	ADD_SIGNAL(MethodInfo(SNAME("animation_started"), PropertyInfo(Variant::STRING_NAME, "anim_name")));
+	ADD_SIGNAL(MethodInfo(SNAME("animation_event_triggered"), PropertyInfo(Variant::OBJECT, "event", PROPERTY_HINT_RESOURCE_TYPE, "AnimationEvent")));
 	ADD_SIGNAL(MethodInfo(SNAME("caches_cleared")));
 	ADD_SIGNAL(MethodInfo(SNAME("mixer_applied")));
 	ADD_SIGNAL(MethodInfo(SNAME("mixer_updated"))); // For updating dummy player.

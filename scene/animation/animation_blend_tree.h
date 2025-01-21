@@ -158,6 +158,8 @@ private:
 	StringName fade_in_remaining = "fade_in_remaining";
 	StringName fade_out_remaining = "fade_out_remaining";
 	StringName time_to_restart = "time_to_restart";
+	StringName start_callback = "start_callback";
+	StringName finish_callback = "finish_callback";
 
 protected:
 	static void _bind_methods();
