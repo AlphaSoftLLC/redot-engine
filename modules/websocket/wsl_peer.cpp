@@ -600,7 +600,6 @@ void WSLPeer::_wsl_recv_start_callback(wslay_event_context_ptr ctx, const struct
 		// Get ready to process a data package.
 		PendingMessage &pm = peer->pending_message;
 		pm.opcode = op;
-		pm.payload_size = arg->payload_length;
 	}
 }
 
@@ -610,6 +609,7 @@ void WSLPeer::_wsl_frame_recv_chunk_callback(wslay_event_context_ptr ctx, const 
 	if (pm.opcode != 0) {
 		// Only write the payload.
 		peer->in_buffer.write_packet(arg->data, arg->data_length, nullptr);
+		pm.payload_size += arg->data_length;
 	}
 }
 
@@ -862,10 +862,12 @@ void WSLPeer::close(int p_code, String p_reason) {
 		}
 	}
 
-	heartbeat_waiting = false;
-	in_buffer.clear();
-	packet_buffer.resize(0);
-	pending_message.clear();
+	if (ready_state == STATE_CLOSED) {
+		heartbeat_waiting = false;
+		in_buffer.clear();
+		packet_buffer.resize(0);
+		pending_message.clear();
+	}
 }
 
 IPAddress WSLPeer::get_connected_host() const {

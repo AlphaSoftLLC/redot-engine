@@ -40,6 +40,7 @@
 class AspectRatioContainer;
 class ColorMode;
 class ColorPickerShape;
+class FileDialog;
 class GridContainer;
 class HSlider;
 class Label;
@@ -51,7 +52,6 @@ class PopupMenu;
 class SpinBox;
 class StyleBoxFlat;
 class TextureRect;
-class FileDialog;
 
 class ColorPresetButton : public BaseButton {
 	GDCLASS(ColorPresetButton, BaseButton);
@@ -106,7 +106,7 @@ public:
 		SHAPE_MAX
 	};
 
-	static const int SLIDER_COUNT = 4;
+	static const int SLIDER_COUNT = 3;
 
 private:
 	enum class MenuOption {
@@ -146,7 +146,7 @@ private:
 	TextureRect *picker_texture_rect = nullptr;
 	Color picker_color;
 	FileDialog *file_dialog = nullptr;
-	Button *menu_btn = nullptr;
+	MenuButton *menu_btn = nullptr;
 	PopupMenu *options_menu = nullptr;
 
 	MarginContainer *internal_margin = nullptr;
@@ -159,6 +159,7 @@ private:
 	Control *wheel = nullptr;
 	Control *wheel_uv = nullptr;
 	TextureRect *sample = nullptr;
+	VBoxContainer *swatches_vbc = nullptr;
 	GridContainer *preset_container = nullptr;
 	HBoxContainer *recent_preset_hbc = nullptr;
 	Button *btn_add_preset = nullptr;
@@ -308,7 +309,6 @@ private:
 	void _target_gui_input(const Ref<InputEvent> &p_event);
 	void _pick_finished();
 	void _update_menu_items();
-	void _update_menu();
 	void _options_menu_cbk(int p_which);
 
 	// Legacy color picking.
