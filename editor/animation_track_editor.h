@@ -42,6 +42,7 @@
 #include "scene/gui/scroll_bar.h"
 #include "scene/gui/tree.h"
 #include "scene/resources/animation.h"
+#include "scene/resources/animation_event.h"
 
 class AnimationMarkerEdit;
 class AnimationTrackEditor;

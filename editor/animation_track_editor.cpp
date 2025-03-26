@@ -62,6 +62,7 @@
 #include "scene/gui/texture_rect.h"
 #include "scene/gui/view_panner.h"
 #include "scene/main/window.h"
+#include "scene/resources/animation_event.h"
 #include "servers/audio/audio_stream.h"
 
 constexpr double FPS_DECIMAL = 1.0;
@@ -431,12 +432,12 @@ bool AnimationTrackKeyEdit::_set(const StringName &p_name, const Variant &p_valu
 		} break;
 		case Animation::TYPE_EVENT: {
 			if (name == "event") {
-				Ref<AudioStream> stream = p_value;
+				Ref<AnimationEvent> evt = p_value;
 
 				setting = true;
 				undo_redo->create_action(TTR("Animation Change Keyframe Value"), UndoRedo::MERGE_ENDS);
 				Ref<Resource> prev = animation->event_track_get_key_event(track, key);
-				undo_redo->add_do_method(animation.ptr(), "event_track_set_key_event", track, key, stream);
+				undo_redo->add_do_method(animation.ptr(), "event_track_set_key_event", track, key, evt);
 				undo_redo->add_undo_method(animation.ptr(), "event_track_set_key_event", track, key, prev);
 				undo_redo->add_do_method(this, "_update_obj", animation);
 				undo_redo->add_undo_method(this, "_update_obj", animation);
@@ -5591,6 +5592,24 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 		p_ofs += SECOND_DECIMAL;
 	}
 
+	const Animation::TrackType track_type = animation->track_get_type(p_track);
+
+	if (track_type == Animation::TYPE_EVENT) {
+		Dictionary d;
+		d["event"] = Ref<AnimationEvent>();
+		d["probability"] = 1.0;
+		d["weight_threshold"] = 0.0;
+
+		EditorUndoRedoManager *undo_redo = EditorUndoRedoManager::get_singleton();
+		undo_redo->create_action(TTR("Add Method Track Key"));
+		undo_redo->add_do_method(animation.ptr(), "track_insert_key", p_track, p_ofs, d);
+		undo_redo->add_undo_method(this, "_clear_selection_for_anim", animation);
+		undo_redo->add_undo_method(animation.ptr(), "track_remove_key_at_time", p_track, p_ofs);
+		undo_redo->commit_action();
+
+		return;
+	}
+
 	Node *node = root->get_node_or_null(animation->track_get_path(p_track));
 	if (!node) {
 		EditorNode::get_singleton()->show_warning(TTR("Track path is invalid, so can't add a key."));
@@ -5598,7 +5617,7 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 	}
 
 	// Special handling for this one.
-	if (animation->track_get_type(p_track) == Animation::TYPE_METHOD) {
+	if (track_type == Animation::TYPE_METHOD) {
 		method_selector->select_method_from_instance(node);
 
 		insert_key_from_track_call_ofs = p_ofs;
@@ -5610,9 +5629,10 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 	id.path = animation->track_get_path(p_track);
 	id.advance = false;
 	id.track_idx = p_track;
-	id.type = animation->track_get_type(p_track);
+	id.type = track_type;
 	// TRANSLATORS: This describes the target of new animation track, will be inserted into another string.
 	id.query = vformat(TTR("node '%s'"), node->get_name());
+
 	id.time = p_ofs;
 	// id.value is filled in each case handled below.
 
@@ -5687,6 +5707,13 @@ void AnimationTrackEditor::_insert_key_from_track(float p_ofs, int p_track) {
 		} break;
 		case Animation::TYPE_ANIMATION: {
 			id.value = StringName("[stop]");
+		} break;
+		case Animation::TYPE_EVENT: {
+			Dictionary ek;
+			ek["event"] = Ref<AnimationEvent>();
+			ek["start_offset"] = 0;
+			ek["end_offset"] = 0;
+			id.value = ek;
 		} break;
 		default: {
 			// All track types should be handled by now.
